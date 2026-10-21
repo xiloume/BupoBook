@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background-color: #09090b;
+  color: #fafafa;
+}
+
+/* Images du lecteur : éviter l'espace sous les images inline */
+.reader-page img {
+  display: block;
+  width: 100%;
+}

@@ -1,0 +1,97 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String            @id @default(cuid())
+  email        String            @unique
+  username     String            @unique
+  passwordHash String?
+  hubId        String?           @unique
+  role         String            @default("USER") // USER | ADMIN
+  createdAt    DateTime          @default(now())
+  favorites    Favorite[]
+  progress     ReadingProgress[]
+  ratings      ChapterRating[]
+}
+
+model Series {
+  id          String     @id @default(cuid())
+  slug        String     @unique
+  title       String
+  author      String?
+  artist      String?
+  description String?
+  status      String     @default("ONGOING") // ONGOING | COMPLETED | HIATUS
+  genres      String     @default("") // sÃ©parÃ©s par des virgules
+  coverPath   String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  chapters    Chapter[]
+  favorites   Favorite[]
+}
+
+model Chapter {
+  id          String            @id @default(cuid())
+  seriesId    String
+  number      Float
+  title       String?
+  publishedAt DateTime          @default(now())
+  series      Series            @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  pages       Page[]
+  progress    ReadingProgress[]
+  ratings     ChapterRating[]
+
+  @@unique([seriesId, number])
+  @@index([seriesId])
+}
+
+model Page {
+  id        String  @id @default(cuid())
+  chapterId String
+  index     Int
+  path      String // relatif Ã  DATA_DIR
+  chapter   Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  @@unique([chapterId, index])
+}
+
+model Favorite {
+  userId    String
+  seriesId  String
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  series    Series    @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+
+  @@id([userId, seriesId])
+}
+
+model ReadingProgress {
+  userId    String   @default("")
+  chapterId String   @default("")
+  pageIndex Int      @default(0)
+  completed Boolean  @default(false)
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chapter   Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  @@id([userId, chapterId])
+}
+
+model ChapterRating {
+  userId    String
+  chapterId String
+  value     Int      // 1 Ã  5
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chapter   Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  @@id([userId, chapterId])
+  @@index([chapterId])
+}
